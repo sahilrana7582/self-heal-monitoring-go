@@ -56,6 +56,20 @@ func (m *JobMonitor) register(name string, fn func()) {
 	m.lock.Unlock()
 }
 
+func (m *JobMonitor) runJob(name string) {
+	job, ok := m.jobs[name]
+
+	if !ok {
+		fmt.Printf("Job: %s not exits to run\n", name)
+		return
+	}
+
+	m.lock.Lock()
+	m.wg.Add(1)
+	m.lock.Unlock()
+	go job.fn()
+}
+
 func a() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -74,6 +88,9 @@ func a() {
 func main() {
 	mon := newJobMonitor()
 	mon.register("a", a)
+
+	mon.runJob("a")
+	mon.monitor()
 
 	mon.wg.Wait()
 }
